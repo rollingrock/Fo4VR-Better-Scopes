@@ -3,7 +3,7 @@
 
 #define PI 3.14159265358979323846
 
-namespace F4VRBody {
+namespace BetterScopes {
 
 	float vec3_len(NiPoint3 v1) {
 
@@ -189,4 +189,40 @@ namespace F4VRBody {
 
 		return nullptr;
 	}
+
+	Matrix44 HMD43MatrixToNiMatrix(vr::HmdMatrix34_t hmdMat) {
+		Matrix44 retM;
+
+		retM.data[0][0] = hmdMat.m[0][0];
+		retM.data[1][0] = hmdMat.m[1][0];
+		retM.data[2][0] = hmdMat.m[2][0];
+		retM.data[0][1] = hmdMat.m[0][1];
+		retM.data[1][1] = hmdMat.m[1][1];
+		retM.data[2][1] = hmdMat.m[2][1];
+		retM.data[0][2] = hmdMat.m[0][2];
+		retM.data[1][2] = hmdMat.m[1][2];
+		retM.data[2][2] = hmdMat.m[2][2];
+		retM.data[0][3] = hmdMat.m[0][3];
+		retM.data[1][3] = hmdMat.m[1][3];
+		retM.data[2][3] = hmdMat.m[2][3];
+
+		retM.data[0][3] = 0.0;
+		retM.data[1][3] = 0.0;
+		retM.data[2][3] = 0.0;
+		retM.data[3][3] = 1.0;
+
+		return retM;
+	 }
+
+	Matrix44 HMD44MatrixToNiMatrix(vr::HmdMatrix44_t hmdMat) {
+		Matrix44 retM;
+
+		for (auto i = 0; i < 4; i++) {
+			for (auto j = 0; j < 4; j++) {
+				retM.data[i][j] = hmdMat.m[i][j];
+			}
+		}
+
+		return retM;
+	 }
 }

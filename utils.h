@@ -2,10 +2,11 @@
 
 #include "f4se/GameReferences.h"
 #include "f4se/NiNodes.h"
+#include "openvr/openvr.h"
 
 #include "matrix.h"
 
-namespace F4VRBody {
+namespace BetterScopes {
 
 	 float vec3_len(NiPoint3 v1);
 	 NiPoint3 vec3_norm(NiPoint3 v1);
@@ -32,5 +33,8 @@ namespace F4VRBody {
 
 	 NiNode* getChildNode(const char* nodeName, NiNode* nde);
 	 NiNode* get1stChildNode(const char* nodeName, NiNode* nde);
+
+	 Matrix44 HMD43MatrixToNiMatrix(vr::HmdMatrix34_t hmdMat);
+	 Matrix44 HMD44MatrixToNiMatrix(vr::HmdMatrix44_t hmdMat);
 
 }

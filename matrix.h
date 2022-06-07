@@ -3,11 +3,10 @@
 #include "f4se/GameReferences.h"
 #include "f4se/NiNodes.h"
 
-#include "utils.h"
 
 #define PI 3.14159265358979323846
 
-namespace F4VRBody {
+namespace BetterScopes {
 	
 	class Matrix44 {
 	public:

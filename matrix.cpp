@@ -1,9 +1,9 @@
 #include "matrix.h"
+#include "utils.h"
 
 #include <math.h>
 
-
-namespace F4VRBody {
+namespace BetterScopes {
 
 	void Matrix44::getEulerAngles(float* heading, float* roll, float* attitude) {
 
