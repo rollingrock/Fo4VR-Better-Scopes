@@ -4,8 +4,12 @@
 #include "utils.h"
 #include "Quaternion.h"
 #include "playerNodes.h"
+#include "config.h"
 
 #include "f4se/GameCamera.h"
+#include "f4se/GameSettings.h"
+
+#include <algorithm>
 
 //#include "api/PapyrusVRAPI.h"
 //#include "api/VRManagerAPI.h"
@@ -33,11 +37,12 @@ namespace BetterScopes {
 				}
 			}
 
-			//vrhook = RequestOpenVRHookManagerObject();
-			
 			return true;
 		});
 
+		if (!loadConfig()) {
+			_MESSAGE("FAILED TO LOAD CONFIG INI");
+		}
 
 		_MESSAGE("Finished setting up for game load");
 	}
@@ -91,23 +96,30 @@ namespace BetterScopes {
 			return;
 		}
 
-		reticle->setAlignment();
+		reticle->collimateSight();
 		reticle->moveReticle();
 
 
 		delete reticle;
+
+
+		Setting* set = GetINISetting("bForceUseCustomFOV:VR");
+
+		Setting* set2 = GetINISetting("iCustomFOVEyeIndex:VR");
+
+
 		return;
 	}
 
-	void Reticle::setAlignment() {
-		updateTransformsDown(reticleNode, true);
+	void Reticle::collimateSight() {
+		updateTransformsDown(reticleNode, true);   // reset reticle node back to default position
 		NiNode* camera = (*g_playerCamera)->cameraNode;
 
 		eye = camera->m_worldTransform;
 
-		NiPoint3 eyeloc = NiPoint3(0,0,0);
+		NiPoint3 eyeloc = NiPoint3(0, 0, 0);
 
-		float eyeoffset = 2.3f;   // offset to the right eye from the player camera
+		float eyeoffset = getEyeAlignmentConfig() ? getEyeOffsetConfig() : getEyeOffsetConfig() * -1;   // offset to the eye from the player camera
 
 		eyeloc.x = eyeoffset;
 
@@ -118,7 +130,7 @@ namespace BetterScopes {
 
 		// get vector from the eye to the center of the reticle
 		eye2ret = reticleNode->m_worldTransform.pos - eye.pos;
-		
+
 		// use the length of this vector later to scale the calculated unit vector offset to the eye plane
 		float eyelen = vec3_len(eye2ret);
 
@@ -140,10 +152,16 @@ namespace BetterScopes {
 		offset.y = 0;   // do not want to move the reticle forward or backwards from the player
 		offset *= eyelen - 1;  // subtract by 1 since offset was calculated 1 unit down the barrel
 
+		lookingThroughScope = dot > 0.99 ? true : false;
+
 	}
 
 
 	void Reticle::moveReticle() {
+		if (!lookingThroughScope) {
+			return;
+		}
+
 		NiPoint3 newLocal = offset + reticleNode->m_localTransform.pos;
 
 		reticleNode->m_localTransform.pos = newLocal;

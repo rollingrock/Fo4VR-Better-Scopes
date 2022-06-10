@@ -6,7 +6,6 @@
 #include "f4se/NiNodes.h"
 
 
-
 namespace BetterScopes {
 
 	class Reticle {
@@ -19,7 +18,7 @@ namespace BetterScopes {
 			rightEye = true;
 		};
 
-		void setAlignment();
+		void collimateSight();
 
 		void moveReticle();
 
@@ -32,6 +31,7 @@ namespace BetterScopes {
 		bool rightEye;
 		NiNode* body;
 		NiTransform eye;
+		bool lookingThroughScope;
 	};
 
 
