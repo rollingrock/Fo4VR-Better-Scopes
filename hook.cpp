@@ -1,5 +1,6 @@
 #include "hook.h"
 #include "utils.h"
+#include "config.h"
 #include "BetterScopes.h"
 
 #include <math.h>
@@ -38,7 +39,23 @@ namespace Hook {
 
 		eyeFOV* fov = (eyeFOV*)adjust;
 
-		float fovAdjust = 0.0f;
+		float fovScale = BetterScopes::getScopeZoomScaleConfig();
+		float fovMult = BetterScopes::getZoomMultiplier() * fovScale;
+		float fovSpeed = BetterScopes::getScopeZoomSpeedConfig();
+
+		static float fovAdjust = 0.0f;
+
+		if (fovAdjust < fovMult) {
+			fovAdjust += fovSpeed;
+		}
+		else if (fovAdjust > 0.0f) {
+			fovAdjust -= fovSpeed;
+		}
+		
+		if (fovAdjust < 0.0f) {
+			// never zoom out
+			fovAdjust = 0.0f;
+		}
 
 		float leftDeg = BetterScopes::rads_to_degrees(atan(fov->left));
 		float rightDeg = BetterScopes::rads_to_degrees(atan(fov->right));

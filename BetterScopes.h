@@ -31,13 +31,10 @@ namespace BetterScopes {
 		bool rightEye;
 		NiNode* body;
 		NiTransform eye;
-		bool lookingThroughScope;
 	};
 
-
-
-
 	void startUp();
-
 	void update();
+	void setEquippedScopeZoom();
+	float getZoomMultiplier();
 }

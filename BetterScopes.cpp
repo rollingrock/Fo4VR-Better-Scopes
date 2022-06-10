@@ -20,6 +20,9 @@ namespace BetterScopes {
 
 	NiPoint3 initialLocal = NiPoint3(0,0,0);
 
+	float scopeZoom = 0.0f;
+	bool lookingThroughScope = false;
+
 	void startUp() {
 
 		// on startup go through every mod attachment in the game and if you find bHasScope (target = 48) then
@@ -99,6 +102,8 @@ namespace BetterScopes {
 		reticle->collimateSight();
 		reticle->moveReticle();
 
+		setEquippedScopeZoom();
+
 
 		delete reticle;
 
@@ -109,6 +114,32 @@ namespace BetterScopes {
 
 
 		return;
+	}
+	
+	void setEquippedScopeZoom() {
+		PlayerCharacter* pc = *g_player;
+
+		TESObjectWEAP* weap = (TESObjectWEAP*)pc->middleProcess->unk08->equipData->item;
+
+
+		if (weap->GetFormType() != FormType::kFormType_WEAP) {
+			scopeZoom = 0.0f;
+			return;
+		}
+
+		if (!pc->actorState.IsWeaponDrawn() || !lookingThroughScope) {
+			scopeZoom = 0.0f;
+			return;
+		}
+
+		TESObjectWEAP::InstanceData* weapData = (TESObjectWEAP::InstanceData*)pc->middleProcess->unk08->equipData->instanceData;
+
+		scopeZoom = weapData->zoomData->zoomData.fovMult;
+
+	}
+
+	float getZoomMultiplier() {
+		return scopeZoom;
 	}
 
 	void Reticle::collimateSight() {
@@ -152,7 +183,7 @@ namespace BetterScopes {
 		offset.y = 0;   // do not want to move the reticle forward or backwards from the player
 		offset *= eyelen - 1;  // subtract by 1 since offset was calculated 1 unit down the barrel
 
-		lookingThroughScope = dot > 0.99 ? true : false;
+		lookingThroughScope = dot > getScopeDetectThreshConfig() ? true : false;
 
 	}
 
