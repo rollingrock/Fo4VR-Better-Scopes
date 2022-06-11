@@ -5,13 +5,15 @@
 
 #include <math.h>
 
-RelocAddr<uintptr_t> hookMainLoopFunc(0xd8187e);
-
+RelocAddr<uintptr_t> hookMainLoopFunc(0xd83ebc);
+RelocAddr<uintptr_t> hookLateCulling(0xd84ee4);
 RelocAddr<uintptr_t> hookEyeFOVAdjust(0x2804c26);
 
+typedef void(*_hookedMainLoop)(uint64_t rcx);
+RelocAddr<_hookedMainLoop> hookedMainLoop(0x1ba7a80);
 
-typedef void(*_hookedMainLoop)();
-RelocAddr<_hookedMainLoop> hookedMainLoop(0xd83ac0);
+typedef void(*_hookedLateCulling)(uint64_t rcx);
+RelocAddr<_hookedLateCulling> hookedLateCulling(0xf10ed0);
 
 typedef void(*_hookedEyeFOVAdjustFunc)(uintptr_t camera, uintptr_t adjust, UINT eye);
 RelocAddr<_hookedEyeFOVAdjustFunc> hookedEyeFOVAdjustFunc(0x1c2bf60);
@@ -20,11 +22,15 @@ bool dir = true;
 
 namespace Hook {
 
-	void hookIt() {
-
+	void hookIt(uint64_t rcx) {
 		BetterScopes::update();
-
-		hookedMainLoop();
+		hookedMainLoop(rcx);
+		return;
+	}
+	
+	void hookCulling(uint64_t rcx) {
+		BetterScopes::keepScopeVisible();
+		hookedLateCulling(rcx);
 		return;
 	}
 
@@ -79,6 +85,7 @@ namespace Hook {
 	void hookMain() {
 
 		g_branchTrampoline.Write5Call(hookMainLoopFunc.GetUIntPtr(), (uintptr_t)&hookIt);
+		g_branchTrampoline.Write5Call(hookLateCulling.GetUIntPtr(), (uintptr_t)&hookCulling);
 		g_branchTrampoline.Write5Call(hookEyeFOVAdjust.GetUIntPtr(), (uintptr_t)&hookEyeFOV);
 	}
 

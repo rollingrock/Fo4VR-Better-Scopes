@@ -23,6 +23,8 @@ namespace BetterScopes {
 	float scopeZoom = 0.0f;
 	bool lookingThroughScope = false;
 
+	bool isLoaded = false;
+
 	void startUp() {
 
 		// on startup go through every mod attachment in the game and if you find bHasScope (target = 48) then
@@ -47,28 +49,39 @@ namespace BetterScopes {
 			_MESSAGE("FAILED TO LOAD CONFIG INI");
 		}
 
+		isLoaded = true;
+
 		_MESSAGE("Finished setting up for game load");
 	}
 
 	
 	// this function runs in the main loop so will fire every frame
 	void update() {
-
-		if (!(*g_player)->unkF0) {
+		if (!isLoaded) {
 			return;
 		}
 
-		if (!(*g_player)->unkF0->rootNode) {
+		if (!(*g_player)) {
 			return;
 		}
 
-		if (!(*g_player)->firstPersonSkeleton) {
+		PlayerCharacter* pc = (*g_player);
+
+		if (!pc->unkF0) {
 			return;
 		}
 
-		pn = (PlayerNodes*)((char*)(*g_player) + 0x6e0);
+		if (!pc->unkF0->rootNode) {
+			return;
+		}
 
-		NiNode* body = (*g_player)->firstPersonSkeleton;
+		if (!pc->firstPersonSkeleton) {
+			return;
+		}
+
+		pn = (PlayerNodes*)((char*)pc + 0x6e0);
+
+		NiNode* body = pc->firstPersonSkeleton;
 		Reticle* reticle = nullptr;
 		NiAVObject* scopeRet = nullptr;
 
@@ -104,7 +117,6 @@ namespace BetterScopes {
 
 		setEquippedScopeZoom();
 
-
 		delete reticle;
 
 
@@ -115,12 +127,15 @@ namespace BetterScopes {
 
 		return;
 	}
-	
+
 	void setEquippedScopeZoom() {
 		PlayerCharacter* pc = *g_player;
 
 		TESObjectWEAP* weap = (TESObjectWEAP*)pc->middleProcess->unk08->equipData->item;
 
+		if (!weap) {
+			return;
+		}
 
 		if (weap->GetFormType() != FormType::kFormType_WEAP) {
 			scopeZoom = 0.0f;
@@ -134,7 +149,9 @@ namespace BetterScopes {
 
 		TESObjectWEAP::InstanceData* weapData = (TESObjectWEAP::InstanceData*)pc->middleProcess->unk08->equipData->instanceData;
 
-		scopeZoom = weapData->zoomData->zoomData.fovMult;
+		if (weapData) {
+			scopeZoom = weapData->zoomData->zoomData.fovMult;
+		}
 
 	}
 
@@ -142,6 +159,28 @@ namespace BetterScopes {
 		return scopeZoom;
 	}
 
+	void keepScopeVisible() {
+		PlayerCharacter* pc = *g_player;
+
+		if (!pc->actorState.IsWeaponDrawn()) {
+			return;
+		}
+
+		static BSFixedString scopeNormalName = "ScopeNormal";
+		static BSFixedString scopeAimingName = "ScopeAiming";
+
+		NiNode* sNorm = pc->firstPersonSkeleton->GetObjectByName(&scopeNormalName)->GetAsNiNode();
+		NiNode* sAim = pc->firstPersonSkeleton->GetObjectByName(&scopeAimingName)->GetAsNiNode();
+
+		if (!sNorm || !sAim) {
+			return;
+		}
+
+		sNorm->flags |= 0x1;
+		sAim->flags &= 0xFFFFFFFFFFFFFFFE;
+
+	}
+	
 	void Reticle::collimateSight() {
 		updateTransformsDown(reticleNode, true);   // reset reticle node back to default position
 		NiNode* camera = (*g_playerCamera)->cameraNode;
@@ -161,6 +200,10 @@ namespace BetterScopes {
 
 		// get vector from the eye to the center of the reticle
 		eye2ret = reticleNode->m_worldTransform.pos - eye.pos;
+
+		NiPoint3 hmdFwd = vec3_norm(pn->HmdNode->m_worldTransform.rot * NiPoint3(0, 1, 0));
+
+		float dotHMD = vec3_dot(hmdFwd, vec3_norm(eye2ret));
 
 		// use the length of this vector later to scale the calculated unit vector offset to the eye plane
 		float eyelen = vec3_len(eye2ret);
@@ -184,6 +227,8 @@ namespace BetterScopes {
 		offset *= eyelen - 1;  // subtract by 1 since offset was calculated 1 unit down the barrel
 
 		lookingThroughScope = dot > getScopeDetectThreshConfig() ? true : false;
+
+		lookingThroughScope = dotHMD > (getScopeDetectThreshConfig() - 0.02) ? lookingThroughScope : false;   // widen hmd to scope threshold slightly to allow for some margin off the center of the eye
 
 	}
 

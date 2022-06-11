@@ -37,4 +37,5 @@ namespace BetterScopes {
 	void update();
 	void setEquippedScopeZoom();
 	float getZoomMultiplier();
+	void keepScopeVisible();
 }
