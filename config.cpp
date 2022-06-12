@@ -9,6 +9,7 @@ namespace BetterScopes {
 	float c_scopeZoomScale;
 	float c_scopeZoomSpeed;
 	float c_scopeDetectThresh;
+	bool c_useFRIKDynamicGripping;
 
 	bool loadConfig() {
 		CSimpleIniA ini;
@@ -24,6 +25,7 @@ namespace BetterScopes {
 		c_scopeZoomScale = (float)ini.GetDoubleValue("BetterScopes", "scopeZoomScale", 1.0f);
 		c_scopeZoomSpeed = (float)ini.GetDoubleValue("BetterScopes", "scopeZoomSpeed", 0.5f);
 		c_scopeDetectThresh = (float)ini.GetDoubleValue("BetterScopes", "lookScopeDetectThreshold", 0.99f);
+		c_useFRIKDynamicGripping = ini.GetBoolValue("BetterScopes", "UseFRIKDynamicGripping", true);
 
 		return true;
 	}
@@ -48,5 +50,13 @@ namespace BetterScopes {
 
 	float getScopeDetectThreshConfig() {
 		return c_scopeDetectThresh;
+	}
+
+	bool getUseFRIKDynamicGrippingConfig() {
+		return c_useFRIKDynamicGripping;
+	}
+
+	void setUseFRIKDynamicGrippingConfig(bool useGrip) {
+		c_useFRIKDynamicGripping = useGrip;
 	}
 }

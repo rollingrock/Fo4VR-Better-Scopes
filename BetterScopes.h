@@ -4,7 +4,10 @@
 #include "f4se/GameReferences.h"
 #include "f4se/GameObjects.h"
 #include "f4se/NiNodes.h"
+#include "f4se/PluginAPI.h"  // SKSEInterface, PluginInfo
 
+extern PluginHandle g_pluginHandle;
+extern F4SEMessagingInterface* g_messaging;
 
 namespace BetterScopes {
 
@@ -38,4 +41,6 @@ namespace BetterScopes {
 	void setEquippedScopeZoom();
 	float getZoomMultiplier();
 	void keepScopeVisible();
+	void handleStaticGripping(NiNode* weaponNode);
+	void restoreWeaponNode(NiNode* weaponNode, NiTransform weapSave);
 }

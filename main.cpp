@@ -10,14 +10,29 @@
 
 #include "version.h"
 #include "hook.h"
+#include "config.h"
 #include "BetterScopes.h"
 
-static PluginHandle g_pluginHandle = kPluginHandle_Invalid;
 
-static F4SEMessagingInterface* g_messaging = NULL;
 
 
 //Listener for F4SE Messages
+void OnFRIKMessage(F4SEMessagingInterface::Message* msg) {
+	if (msg) {
+		if (msg->type == 15) {
+			if ((bool)msg->data) {
+				BetterScopes::setUseFRIKDynamicGrippingConfig(true);
+			}
+			else {
+				BetterScopes::setUseFRIKDynamicGrippingConfig(false);
+			}
+
+			_MESSAGE("Set Dynamic Gripping Variable to %d!", (bool)msg->data);
+
+		}
+	}
+}
+
 void OnF4SEMessage(F4SEMessagingInterface::Message* msg)
 {
 	if (msg)
@@ -28,8 +43,12 @@ void OnF4SEMessage(F4SEMessagingInterface::Message* msg)
 
 			BetterScopes::startUp();
 		}
+		if (msg->type == F4SEMessagingInterface::kMessage_PostLoad) {
+			g_messaging->RegisterListener(g_pluginHandle, "F4VRBody", OnFRIKMessage);
+		}
 	}
 }
+
 
 extern "C" {
 	bool F4SEPlugin_Query(const F4SEInterface* a_f4se, PluginInfo* a_info)

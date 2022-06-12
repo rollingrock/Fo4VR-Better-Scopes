@@ -13,6 +13,8 @@
 
 //#include "api/PapyrusVRAPI.h"
 //#include "api/VRManagerAPI.h"
+PluginHandle g_pluginHandle = kPluginHandle_Invalid;
+F4SEMessagingInterface* g_messaging = NULL;
 
 namespace BetterScopes {
 
@@ -24,6 +26,8 @@ namespace BetterScopes {
 	bool lookingThroughScope = false;
 
 	bool isLoaded = false;
+
+	bool stickyLookScope = false;
 
 	void startUp() {
 
@@ -87,10 +91,19 @@ namespace BetterScopes {
 
 		static BSFixedString reticleNodeName = "ReticleNode";
 		static BSFixedString weapNodeName = "Weapon";
+		static BSFixedString weapOffNodeName = "WeaponOffset";
 
 		// in case i start putting holsters with frik attached to the body make sure only looking at scopes below the weapon node
 		NiAVObject* weap = body->GetObjectByName(&weapNodeName);
 		if (weap) {
+			NiPoint3 offset = NiPoint3(-0.94, 0, 0);
+			NiAVObject* weapOffset = weap->GetObjectByName(&weapOffNodeName);
+
+			if (weapOffset) {
+				offset.x -= weapOffset->m_localTransform.pos.y;
+				offset.y -= -2.099;
+			}
+			weap->m_localTransform.pos += offset;
 			scopeRet = weap->GetObjectByName(&reticleNodeName);
 		}
 		else {
@@ -98,6 +111,7 @@ namespace BetterScopes {
 		}
 
 		if (scopeRet) {
+			updateTransformsDown(weap->GetAsNiNode(), true);
 			reticle = new Reticle(scopeRet->GetAsNiNode(), body);
 			if (vec3_len(initialLocal) == 0.0) {
 				initialLocal = scopeRet->m_localTransform.pos;
@@ -119,13 +133,50 @@ namespace BetterScopes {
 
 		delete reticle;
 
-
-		Setting* set = GetINISetting("bForceUseCustomFOV:VR");
-
-		Setting* set2 = GetINISetting("iCustomFOVEyeIndex:VR");
-
-
 		return;
+	}
+
+	// Native function that takes the 1st person skeleton weapon node and calculates the skeleton from upperarm down based off the offsetNode
+	void update1stPersonArm(PlayerCharacter* pc, NiNode** weapon, NiNode** offsetNode) {
+		using func_t = decltype(&update1stPersonArm);
+		RelocAddr<func_t> func(0xef6280);
+
+		return func(pc, weapon, offsetNode);
+	}
+
+	void set1stPersonArm(NiNode* weapon, NiNode* offsetNode) {
+
+		NiNode** wp = &weapon;
+		NiNode** op = &offsetNode;
+
+		update1stPersonArm(*g_player, wp, op);
+	}
+
+	void handleStaticGripping(NiNode* weaponNode) {
+
+		NiNode* offsetNode = pn->primaryWeaponOffsetNOde;
+		Matrix44 w;
+		w.data[0][0] = -0.120;
+		w.data[1][0] = 0.987;
+		w.data[2][0] = 0.108;
+		w.data[0][1] = 0.991;
+		w.data[1][1] = 0.112;
+		w.data[2][1] = 0.077;
+		w.data[0][2] = 0.064;
+		w.data[1][2] = 0.116;
+		w.data[2][2] = -0.991;
+
+
+		weaponNode->m_localTransform.rot = w.make43();
+
+		weaponNode->m_localTransform.pos = NiPoint3(6.389, -2.099, -3.133);
+
+		weaponNode->IncRef();
+		set1stPersonArm(weaponNode, offsetNode);
+	}
+
+	void restoreWeaponNode(NiNode* weaponNode, NiTransform weapSave) {
+		weaponNode->m_localTransform = weapSave;
 	}
 
 	void setEquippedScopeZoom() {
@@ -169,8 +220,8 @@ namespace BetterScopes {
 		static BSFixedString scopeNormalName = "ScopeNormal";
 		static BSFixedString scopeAimingName = "ScopeAiming";
 
-		NiNode* sNorm = pc->firstPersonSkeleton->GetObjectByName(&scopeNormalName)->GetAsNiNode();
-		NiNode* sAim = pc->firstPersonSkeleton->GetObjectByName(&scopeAimingName)->GetAsNiNode();
+		NiAVObject* sNorm = pc->firstPersonSkeleton->GetObjectByName(&scopeNormalName);
+		NiAVObject* sAim = pc->firstPersonSkeleton->GetObjectByName(&scopeAimingName);
 
 		if (!sNorm || !sAim) {
 			return;
@@ -229,6 +280,11 @@ namespace BetterScopes {
 		lookingThroughScope = dot > getScopeDetectThreshConfig() ? true : false;
 
 		lookingThroughScope = dotHMD > (getScopeDetectThreshConfig() - 0.02) ? lookingThroughScope : false;   // widen hmd to scope threshold slightly to allow for some margin off the center of the eye
+
+		if (stickyLookScope != lookingThroughScope) {
+			g_messaging->Dispatch(g_pluginHandle, 15, (void*)lookingThroughScope, sizeof(bool), "F4VRBody");
+			stickyLookScope = lookingThroughScope;
+		}	
 
 	}
 
