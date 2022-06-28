@@ -8,6 +8,7 @@ namespace BetterScopes{
 	float getScopeZoomScaleConfig();
 	float getScopeZoomSpeedConfig();
 	float getScopeDetectThreshConfig();
+	float getScopeDistanceThreshConfig();
 	bool getUseFRIKDynamicGrippingConfig();
 	void setUseFRIKDynamicGrippingConfig(bool useGrip);
 }
