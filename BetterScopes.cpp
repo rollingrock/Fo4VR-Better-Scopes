@@ -281,6 +281,8 @@ namespace BetterScopes {
 
 		lookingThroughScope = dotHMD > (getScopeDetectThreshConfig() - 0.02) ? lookingThroughScope : false;   // widen hmd to scope threshold slightly to allow for some margin off the center of the eye
 
+		lookingThroughScope = eyelen <= getScopeDistanceThreshConfig() ? lookingThroughScope : false;   // require scope to be closer to eye for zoom effect
+
 		if (stickyLookScope != lookingThroughScope) {
 			g_messaging->Dispatch(g_pluginHandle, 15, (void*)lookingThroughScope, sizeof(bool), "F4VRBody");
 			stickyLookScope = lookingThroughScope;
