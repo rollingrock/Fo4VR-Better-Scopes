@@ -29,6 +29,11 @@ namespace BetterScopes {
 
 	bool stickyLookScope = false;
 
+	float lastZoom = 0.f;
+	std::vector<float> zoomValues;
+	bool zoomTogglePressed = false;
+	NiPoint3 previewOffset = NiPoint3(0, 0, 0);
+
 	void startUp() {
 
 		// on startup go through every mod attachment in the game and if you find bHasScope (target = 48) then
@@ -54,11 +59,12 @@ namespace BetterScopes {
 		}
 
 		isLoaded = true;
+		zoomValues = getZoomValues();
 
 		_MESSAGE("Finished setting up for game load");
 	}
 
-	
+
 	// this function runs in the main loop so will fire every frame
 	void update() {
 		if (!isLoaded) {
@@ -82,6 +88,7 @@ namespace BetterScopes {
 		if (!pc->firstPersonSkeleton) {
 			return;
 		}
+		loadConfig(5000); // only load every 5 seconds
 
 		pn = (PlayerNodes*)((char*)pc + 0x6e0);
 
@@ -129,7 +136,12 @@ namespace BetterScopes {
 		reticle->collimateSight();
 		reticle->moveReticle();
 
-		setEquippedScopeZoom();
+		if (stickyLookScope && zoomTogglePressed) {
+			setEquippedScopeZoom(true);
+			zoomTogglePressed = false;
+		}else{
+			setEquippedScopeZoom(false);
+		}
 
 		delete reticle;
 
@@ -179,7 +191,7 @@ namespace BetterScopes {
 		weaponNode->m_localTransform = weapSave;
 	}
 
-	void setEquippedScopeZoom() {
+	void setEquippedScopeZoom(const bool toggleZoom) {
 		PlayerCharacter* pc = *g_player;
 
 		TESObjectWEAP* weap = (TESObjectWEAP*)pc->middleProcess->unk08->equipData->item;
@@ -201,7 +213,33 @@ namespace BetterScopes {
 		TESObjectWEAP::InstanceData* weapData = (TESObjectWEAP::InstanceData*)pc->middleProcess->unk08->equipData->instanceData;
 
 		if (weapData) {
-			scopeZoom = weapData->zoomData->zoomData.fovMult;
+			weapData;
+			const auto maxZoom = weapData->zoomData->zoomData.fovMult;
+			scopeZoom = lastZoom > 0 && lastZoom <= maxZoom ? lastZoom : maxZoom;
+
+			if (zoomValues.size() > 1 && toggleZoom) {
+				lastZoom = scopeZoom;
+				const auto itr = std::find(zoomValues.begin(), zoomValues.end(), lastZoom);
+				int startIndex = 0;
+				if (itr != zoomValues.end()) {
+					startIndex = std::distance(zoomValues.begin(), itr);
+					_MESSAGE("LastZoom found: %0.2lf at %d", lastZoom, startIndex);
+				}
+				else {
+					_MESSAGE("LastZoom not found: %0.2lf", lastZoom);
+				}
+				for (int i = startIndex + 1; i != startIndex; i = (i + 1) % zoomValues.size())
+					if (maxZoom > 0 && zoomValues[i] > 0 && maxZoom >= zoomValues[i]) {
+						scopeZoom = zoomValues[i];
+						_DMESSAGE("Found zoom %0.2lf at index %d below maxZoom. Setting zoom to %0.2lf", zoomValues[i], i, scopeZoom);
+						break;
+					}
+					else {
+						_DMESSAGE("Ignoring unreachable zoom %0.2lf at index %d: weapon max at %0.2lf", zoomValues[i], i, scopeZoom);
+						continue;
+					}
+			}
+			lastZoom = scopeZoom;
 		}
 
 	}
@@ -231,7 +269,7 @@ namespace BetterScopes {
 		sAim->flags &= 0xFFFFFFFFFFFFFFFE;
 
 	}
-	
+
 	void Reticle::collimateSight() {
 		updateTransformsDown(reticleNode, true);   // reset reticle node back to default position
 		NiNode* camera = (*g_playerCamera)->cameraNode;
@@ -259,7 +297,7 @@ namespace BetterScopes {
 		// use the length of this vector later to scale the calculated unit vector offset to the eye plane
 		float eyelen = vec3_len(eye2ret);
 
-		// vector pointing straight down the barrel 
+		// vector pointing straight down the barrel
 		ret2Barrel = vec3_norm(reticleNode->m_localTransform.pos);
 
 		// make eye2ret local to reticle node
@@ -276,6 +314,14 @@ namespace BetterScopes {
 		offset = ret2Barrel - eye2ret;
 		offset.y = 0;   // do not want to move the reticle forward or backwards from the player
 		offset *= eyelen - 1;  // subtract by 1 since offset was calculated 1 unit down the barrel
+		// apply reticle adjustments
+		if (!(previewOffset.x == 0 && previewOffset.z == 0)){ // if previewOffset has value, we're in preview mode
+			offset.x += previewOffset.x;
+			offset.z += previewOffset.z;
+		}else { // use ini data
+			offset.x += getRetOffsetXConfig(); // left/right
+			offset.z += getRetOffsetZConfig(); // up/down
+		}
 
 		lookingThroughScope = dot > getScopeDetectThreshConfig() ? true : false;
 
@@ -286,7 +332,7 @@ namespace BetterScopes {
 		if (stickyLookScope != lookingThroughScope) {
 			g_messaging->Dispatch(g_pluginHandle, 15, (void*)lookingThroughScope, sizeof(bool), "F4VRBody");
 			stickyLookScope = lookingThroughScope;
-		}	
+		}
 
 	}
 
@@ -304,5 +350,32 @@ namespace BetterScopes {
 
 	}
 
+	void setZoomToggle(const bool value) {
+		zoomTogglePressed = value;
+	}
 
+	void repositionReticle(const float x, const float z, const float interval) {
+		if (x == 0.f && z == 0.f) { // treat 0,0 entry as a reset
+			previewOffset.x = 0.f;
+			previewOffset.z = 0.f;
+			setRetOffsetXConfig(0.f);
+			setRetOffsetZConfig(0.f);
+			return;
+		}
+		else if (previewOffset.x == 0.f && previewOffset.z == 0.f) { // if previewOffset empty, load with config info.
+			previewOffset.x = getRetOffsetXConfig();
+			previewOffset.z = getRetOffsetZConfig();
+		}
+		previewOffset.x += x * interval;
+		previewOffset.z += z * interval;
+	}
+
+	void saveReticlePreview() {
+		setRetOffsetXConfig(previewOffset.x);
+		setRetOffsetZConfig(previewOffset.z);
+		previewOffset.x = 0.f;
+		previewOffset.z = 0.f;
+		saveConfig();
+		loadConfig();
+	}
 }

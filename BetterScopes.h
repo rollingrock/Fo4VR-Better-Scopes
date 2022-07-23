@@ -38,9 +38,12 @@ namespace BetterScopes {
 
 	void startUp();
 	void update();
-	void setEquippedScopeZoom();
+	void setEquippedScopeZoom(const bool toggleZoom=false);
 	float getZoomMultiplier();
 	void keepScopeVisible();
+	void setZoomToggle(const bool value = true);
+	void repositionReticle(const float x, const float z, const float interval);
+	void saveReticlePreview();
 	void handleStaticGripping(NiNode* weaponNode);
 	void restoreWeaponNode(NiNode* weaponNode, NiTransform weapSave);
 }
