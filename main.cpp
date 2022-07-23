@@ -18,18 +18,34 @@
 
 //Listener for F4SE Messages
 void OnFRIKMessage(F4SEMessagingInterface::Message* msg) {
-	if (msg) {
-		if (msg->type == 15) {
+	NiPoint3* changeData = nullptr;
+	switch (msg->type) {
+		case 15: 
 			if ((bool)msg->data) {
 				BetterScopes::setUseFRIKDynamicGrippingConfig(true);
 			}
 			else {
 				BetterScopes::setUseFRIKDynamicGrippingConfig(false);
 			}
-
 			_MESSAGE("Set Dynamic Gripping Variable to %d!", (bool)msg->data);
-
-		}
+			break;
+		case 16:
+			_MESSAGE("Received Zoomtoggle message");
+			BetterScopes::setZoomToggle(true);
+			break;
+		case 17:
+			if (!msg->data)
+				break;
+			changeData = (NiPoint3*) msg->data;
+			if (changeData->y) // save
+				BetterScopes::saveReticlePreview();
+			else {
+				_MESSAGE("Received Reposition reticle message (%f, %f)", changeData->x, changeData->z);
+				BetterScopes::repositionReticle(changeData->x, changeData->z, BetterScopes::getRetIntervalConfig());
+			}
+			break;
+		default:
+			_MESSAGE("Received unknown message type %d", msg->type);
 	}
 }
 
