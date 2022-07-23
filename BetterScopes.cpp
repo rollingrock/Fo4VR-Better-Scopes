@@ -64,7 +64,7 @@ namespace BetterScopes {
 		_MESSAGE("Finished setting up for game load");
 	}
 
-	
+
 	// this function runs in the main loop so will fire every frame
 	void update() {
 		if (!isLoaded) {
@@ -269,7 +269,7 @@ namespace BetterScopes {
 		sAim->flags &= 0xFFFFFFFFFFFFFFFE;
 
 	}
-	
+
 	void Reticle::collimateSight() {
 		updateTransformsDown(reticleNode, true);   // reset reticle node back to default position
 		NiNode* camera = (*g_playerCamera)->cameraNode;
@@ -297,7 +297,7 @@ namespace BetterScopes {
 		// use the length of this vector later to scale the calculated unit vector offset to the eye plane
 		float eyelen = vec3_len(eye2ret);
 
-		// vector pointing straight down the barrel 
+		// vector pointing straight down the barrel
 		ret2Barrel = vec3_norm(reticleNode->m_localTransform.pos);
 
 		// make eye2ret local to reticle node
@@ -332,7 +332,7 @@ namespace BetterScopes {
 		if (stickyLookScope != lookingThroughScope) {
 			g_messaging->Dispatch(g_pluginHandle, 15, (void*)lookingThroughScope, sizeof(bool), "F4VRBody");
 			stickyLookScope = lookingThroughScope;
-		}	
+		}
 
 	}
 
