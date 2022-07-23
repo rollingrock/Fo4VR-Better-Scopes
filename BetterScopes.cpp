@@ -82,6 +82,7 @@ namespace BetterScopes {
 		if (!pc->firstPersonSkeleton) {
 			return;
 		}
+		loadConfig(5000); // only load every 5 seconds
 
 		pn = (PlayerNodes*)((char*)pc + 0x6e0);
 

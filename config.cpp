@@ -1,5 +1,6 @@
 #include "config.h"
 #include "include/SimpleIni.h"
+#include <chrono>
 
 
 namespace BetterScopes {
@@ -12,8 +13,13 @@ namespace BetterScopes {
 	float c_scopeDistanceThresh;
 	bool c_useFRIKDynamicGripping;
 
-	bool loadConfig() {
-		CSimpleIniA ini;
+	uint64_t lastLoadTime = 0;
+	CSimpleIniA ini;
+
+	bool loadConfig(const uint64_t msBetweenLoads) {
+		const std::uint64_t now = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+		if (now - lastLoadTime < msBetweenLoads)
+			return false;
 		SI_Error rc = ini.LoadFile(".\\Data\\F4SE\\plugins\\BetterScopes.ini");
 
 		if (rc < 0) {
@@ -29,6 +35,7 @@ namespace BetterScopes {
 		c_scopeDistanceThresh = (float)ini.GetDoubleValue("BetterScopes", "lookScopeDistanceThreshold ", 20.00f);
 		c_useFRIKDynamicGripping = ini.GetBoolValue("BetterScopes", "UseFRIKDynamicGripping", true);
 
+		lastLoadTime = now;
 		return true;
 	}
 

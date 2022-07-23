@@ -2,7 +2,7 @@
 
 namespace BetterScopes{
 
-	bool loadConfig();
+	bool loadConfig(const uint64_t msBetweenLoads = 0);
 	bool getEyeAlignmentConfig();
 	float getEyeOffsetConfig();
 	float getScopeZoomScaleConfig();
