@@ -228,7 +228,7 @@ namespace BetterScopes {
 				else {
 					_MESSAGE("LastZoom not found: %0.2lf", lastZoom);
 				}
-				for (int i = startIndex + 1; i != startIndex; i = (i + 1) % zoomValues.size())
+				for (int i = (startIndex + 1) % (int) zoomValues.size(); i != startIndex; i = (i + 1) % (int) zoomValues.size())
 					if (maxZoom > 0 && zoomValues[i] > 0 && maxZoom >= zoomValues[i]) {
 						scopeZoom = zoomValues[i];
 						_DMESSAGE("Found zoom %0.2lf at index %d below maxZoom. Setting zoom to %0.2lf", zoomValues[i], i, scopeZoom);
