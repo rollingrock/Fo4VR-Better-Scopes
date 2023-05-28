@@ -42,7 +42,7 @@ namespace BetterScopes {
 		c_scopeZoomScale = (float)ini.GetDoubleValue("BetterScopes", "scopeZoomScale", 1.0f);
 		c_scopeZoomSpeed = (float)ini.GetDoubleValue("BetterScopes", "scopeZoomSpeed", 0.5f);
 		c_scopeDetectThresh = (float)ini.GetDoubleValue("BetterScopes", "lookScopeDetectThreshold", 0.99f);
-		c_scopeDistanceThresh = (float)ini.GetDoubleValue("BetterScopes", "lookScopeDistanceThreshold ", 20.00f);
+		c_scopeDistanceThresh = (float)ini.GetDoubleValue("BetterScopes", "lookScopeDistanceThreshold", 20.00f);
 		c_useFRIKDynamicGripping = ini.GetBoolValue("BetterScopes", "UseFRIKDynamicGripping", true);
 		c_zoomValues = ini.GetValue("BetterScopes", "ZoomValues", "2.5,4.0,8.0");
 
